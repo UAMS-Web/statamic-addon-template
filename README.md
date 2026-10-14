@@ -11,12 +11,13 @@ The starting point for new UAMS Statamic add-ons. It is a GitHub template reposi
 - `.github/`: workflows, the setup action, issue and pull request templates, and Dependabot.
 - `.githooks/pre-commit`, wired by `composer install`.
 - `docs/DECISIONS.md`, the decision log, with the log's rules.
+- A wiki skeleton in `docs/wiki/`, the `publish-wiki.yml` workflow that publishes it on each release, and the `github-wiki` skill that records how the publishing action behaves.
 
 ## What is deliberately left out
 
 - **Synced files** (`.agents/`, `.claude/`, `.cursor/`, `AGENTS.md`). A new add-on onboards to the sync in [`UAMS-Web/uams-claude-skills`](https://github.com/UAMS-Web/uams-claude-skills) instead of carrying a snapshot, so it never starts with a stale copy. See [Onboard to the sync](#3-onboard-to-the-sync).
 - **`LICENSE`**, and the `license` field in `composer.json`. The choice waits on the general decision from UAMS legal in [`UAMS-Web/uams-statamic#3039`](https://github.com/UAMS-Web/uams-statamic/issues/3039).
-- The wiki workflow, `docs/SPEC.md`, `docs/DEVELOPMENT.md` and the add-on's own code.
+- `docs/SPEC.md`, `docs/DEVELOPMENT.md`, the add-on's wiki pages and the add-on's own code.
 
 ## Starting an add-on
 
@@ -33,6 +34,7 @@ The starting point for new UAMS Statamic add-ons. It is a GitHub template reposi
    - `package.json`: `name`.
    - The `UAMSWeb\AddonTemplate` namespace in `src/` and `tests/`.
    - `tests/Integration/ServiceProviderTest.php`: the package name.
+   - `docs/wiki/`: every page, and the repository name and version in `_Footer.md`, `_Sidebar.md` and `Home.md`.
    - `.github/pull_request_template.md` and the header of `.github/workflows/ci.yml`: the repository name.
 3. Replace the seed entry in `docs/DECISIONS.md` with the add-on's own first decision, or keep it and add yours after it. The decision-log guard needs at least one entry.
 4. Run `composer install`, which installs the dependencies, applies `patches/` and sets `core.hooksPath` to `.githooks`. Then run `composer update --lock` if `composer.lock` needs to follow the new name.
@@ -55,6 +57,7 @@ Add each restored job's name to the ruleset in the same change, in the order `ci
 
 ### 4. Settings that live outside the repository
 
+- The wiki: create its first page in the browser (Wiki tab, *Create the first page*) before the first `Publish wiki` run, and restrict editing to collaborators. The `github-wiki` skill has the detail. Delete `publish-wiki.yml` and `docs/wiki/` if the add-on will have no wiki.
 - The organization ruleset "main: required checks" must list every job `name:` in `ci.yml` and the two pull-request-body workflows. `check-required-checks.yml` reports drift.
 - A `LICENSE` and `composer.json`'s `license` field, once `UAMS-Web/uams-statamic#3039` is decided.
 
