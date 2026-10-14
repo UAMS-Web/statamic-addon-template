@@ -52,6 +52,7 @@ Developing against a host application is covered in [the development guide](docs
 4. Replace the seed entry in `docs/DECISIONS.md` with the add-on's own first decision, or keep it and add yours after it. The decision-log guard needs at least one entry.
 5. Run `composer install`, which installs the dependencies, applies `patches/` and sets `core.hooksPath` to `.githooks`. Then run `composer update --lock` if `composer.lock` needs to follow the new name.
 6. Run `npm ci` after `composer install` (`@statamic/cms` is a `file:` link into `vendor/`), then `composer ci` and `npm run test:scripts`.
+7. Create the wiki's first page in the browser, once, before the first release; see [Settings that live outside the repository](#4-settings-that-live-outside-the-repository).
 
 ### 2. Add the add-on
 
@@ -70,7 +71,7 @@ Add each restored job's name to the ruleset in the same change, in the order `ci
 
 ### 4. Settings that live outside the repository
 
-- The wiki: create its first page in the browser (Wiki tab, *Create the first page*) before the first `Publish wiki` run, and restrict editing to collaborators. The `github-wiki` skill has the detail. Delete `publish-wiki.yml` and `docs/wiki/` if the add-on will have no wiki.
+- **Create the wiki's first page, before the add-on's first release.** In the new repository, open the Wiki tab, choose *Create the first page* and save it. A repository generated from the template does not get a wiki, and the wiki's git repository does not exist until a first page does, so `publish-wiki.yml` fails on its push without it. The first publish replaces that page with `docs/wiki/`. Also restrict wiki editing to collaborators (*Settings*, *Features*), since a publish overwrites browser edits. The `github-wiki` skill has the detail. Delete `publish-wiki.yml` and `docs/wiki/` if the add-on will have no wiki.
 - The organization ruleset "main: required checks" must list every job `name:` in `ci.yml` and the two pull-request-body workflows. `check-required-checks.yml` reports drift.
 - A `LICENSE` and `composer.json`'s `license` field, once `UAMS-Web/uams-statamic#3039` is decided.
 
