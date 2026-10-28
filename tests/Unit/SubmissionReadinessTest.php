@@ -9,7 +9,7 @@ declare(strict_types=1);
  *
  * `license` is not in the list yet: add it to the field list below in the same
  * change that adds it to `composer.json`, once UAMS legal has decided
- * (UAMS-Web/uams-statamic#3039).
+ * (UAMS-Web/uams-statamic#261).
  *
  * @command  vendor/bin/pest tests/Unit/SubmissionReadinessTest.php
  */

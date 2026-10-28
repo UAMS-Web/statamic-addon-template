@@ -18,7 +18,7 @@ The starting point for new UAMS Statamic add-ons. It is a GitHub template reposi
 ## What is deliberately left out
 
 - **Synced files** (the rules and skills the sync writes into `.agents/`, `.claude/` and `.cursor/`, and the generated section of `AGENTS.md`). A new add-on onboards to the sync in [`UAMS-Web/uams-claude-skills`](https://github.com/UAMS-Web/uams-claude-skills) instead of carrying a snapshot, so it never starts with a stale copy. See [Onboard to the sync](#3-onboard-to-the-sync).
-- **`LICENSE`**, and the `license` field in `composer.json`. The choice waits on the general decision from UAMS legal in [`UAMS-Web/uams-statamic#3039`](https://github.com/UAMS-Web/uams-statamic/issues/3039).
+- **`LICENSE`**, and the `license` field in `composer.json`. The choice waits on the general decision from UAMS legal in [`UAMS-Web/uams-statamic#261`](https://github.com/UAMS-Web/uams-statamic/issues/261).
 - `docs/SPEC.md`, the add-on's wiki pages and the add-on's own code.
 
 ## Requirements
@@ -73,7 +73,7 @@ Add each restored job's name to the ruleset in the same change, in the order `ci
 
 - **Create the wiki's first page, before the add-on's first release.** In the new repository, open the Wiki tab, choose *Create the first page* and save it. A repository generated from the template does not get a wiki, and the wiki's git repository does not exist until a first page does, so `publish-wiki.yml` fails on its push without it. The first publish replaces that page with `docs/wiki/`. Also restrict wiki editing to collaborators (*Settings*, *Features*), since a publish overwrites browser edits. The `github-wiki` skill has the detail. Delete `publish-wiki.yml` and `docs/wiki/` if the add-on will have no wiki.
 - The organization ruleset "main: required checks" must list every job `name:` in `ci.yml` and the two pull-request-body workflows. `check-required-checks.yml` reports drift.
-- A `LICENSE` and `composer.json`'s `license` field, once `UAMS-Web/uams-statamic#3039` is decided.
+- A `LICENSE` and `composer.json`'s `license` field, once `UAMS-Web/uams-statamic#261` is decided.
 
 ## Keeping the tooling separable
 
