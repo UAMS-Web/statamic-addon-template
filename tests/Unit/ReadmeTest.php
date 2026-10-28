@@ -50,7 +50,7 @@ it('states the statamic/cms floor that composer.json requires', function (): voi
 });
 
 it('names the license that composer.json declares, once it declares one', function (): void {
-    // Read the declared license, which the template leaves out until UAMS legal decides (uams-statamic#3039)
+    // Read the declared license, which the template leaves out until UAMS legal decides (uams-statamic#261)
     $license = readmeComposerManifest()['license'] ?? null;
 
     // Expect the README to name the license and point at the file, or no license to be declared
