@@ -39,7 +39,7 @@ New-Item -ItemType SymbolicLink -Path $link -Target '<slot-path>'
 
 On macOS or Linux, `ln -sfn <slot-path> vendor/uams-web/statamic-addon-template` does the same.
 
-The autoloader maps the add-on's namespace to that path, so a class added on the slot's branch loads with no `composer dump-autoload`. A change to `composer.json` (a new provider, a new `extra.statamic` key) needs `composer update uams-web/statamic-addon-template` from the host root, and the `Discovered Addon:` line at the end of the output confirms discovery.
+The add-on's namespace takes the shape `UAMSWeb\<Family>\<Product>`, and a package maps only its own full prefix; the rule is in [the README's placeholder step](../README.md#1-generate-and-rename). The autoloader maps the add-on's namespace to that path, so a class added on the slot's branch loads with no `composer dump-autoload`. A change to `composer.json` (a new provider, a new `extra.statamic` key) needs `composer update uams-web/statamic-addon-template` from the host root, and the `Discovered Addon:` line at the end of the output confirms discovery.
 
 ## Confirming the add-on loaded
 

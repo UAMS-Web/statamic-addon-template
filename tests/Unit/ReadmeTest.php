@@ -61,6 +61,23 @@ it('requires the package by the name composer.json gives it', function (): void 
     expect(readmeText())->toContain('composer require '.readmeComposerManifest()['name']);
 });
 
+it('states the namespace convention, with the PSR-4 link and the shared-prefix rule', function (): void {
+    // Expect the namespace shape, its optional family level and the PSR-4 reference
+    expect(readmeText())->toContain('`UAMSWeb\<Family>\<Product>`')
+        ->and(readmeText())->toContain('the family level is optional')
+        ->and(readmeText())->toContain('(https://www.php-fig.org/psr/psr-4/)')
+        // Expect the rule that a package maps only its own full prefix, with the neutral example
+        ->and(readmeText())->toContain('never a bare family prefix')
+        ->and(readmeText())->toContain('`UAMSWeb\Forms\Settings\`')
+        ->and(readmeText())->toContain('`UAMSWeb\Forms\Multisite\`');
+});
+
+it('points the development guide at the README paragraph on the namespace', function (): void {
+    // Expect the guide to link the README step that holds the rule
+    expect((string) file_get_contents(dirname(__DIR__, 2).'/docs/DEVELOPMENT.md'))
+        ->toContain('(../README.md#1-generate-and-rename)');
+});
+
 it('links the files it points readers to, and they exist', function (): void {
     // Check each file the README points readers to
     foreach (['docs/DEVELOPMENT.md', 'docs/SUBMISSION.md'] as $path) {

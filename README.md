@@ -40,7 +40,7 @@ Developing against a host application is covered in [the development guide](docs
 
    - `composer.json`: `name`, `description`, `keywords`, `homepage`, `support`, the two `psr-4` namespaces, `extra.statamic` and `extra.laravel.providers`.
    - `package.json`: `name`.
-   - The `UAMSWeb\AddonTemplate` namespace in `src/` and `tests/`.
+   - The `UAMSWeb\AddonTemplate` namespace in `src/` and `tests/`. Make it `UAMSWeb\<Family>\<Product>`; the family level is optional, so `UAMSWeb\<Product>` is also valid. The `autoload.psr-4` key maps that whole prefix to `src/` ([PSR-4](https://www.php-fig.org/psr/psr-4/) allows a prefix of any depth), so the files under `src/` do not move when the prefix changes. Add-ons in a family share the family level, so a package maps only its own full prefix and never a bare family prefix: `UAMSWeb\Forms\Settings\` and `UAMSWeb\Forms\Multisite\` are two packages' keys, and no package maps `UAMSWeb\Forms\`. Where one package's prefix nests inside another's, the outer package has no directory named after the inner one.
    - `tests/Integration/ServiceProviderTest.php`: the package name.
    - `config/statamic-addon-template.php`: rename it to the add-on's handle (the package name without its vendor), and the tag in `tests/Integration/ServiceProviderTest.php` and `docs/DEVELOPMENT.md`. Delete it and its test if the add-on has no settings.
    - `AGENTS.md`: the "About this repository" paragraph.
