@@ -10,17 +10,6 @@ const GATE = "vars.RUN_REMOTE_CI != 'false'"
 const GATED_WORKFLOWS = ['ci.yml', 'check-attribution-footer.yml', 'check-closing-keywords.yml', 'check-required-checks.yml']
 
 /**
- * Whether a job's `if:` is the gate. A matrix job also names `matrix` in it, so that a skipped job
- * still expands its matrix and reports each required check name (see the comment in ci.yml).
- *
- * @param {unknown} condition
- * @returns {boolean}
- */
-function isGated(condition) {
-    return condition === GATE || (typeof condition === 'string' && condition.startsWith(`${GATE} && matrix.`))
-}
-
-/**
  * The ids of the jobs in a workflow whose `if:` is not the gate.
  *
  * @param {string} source The workflow's YAML.
@@ -33,7 +22,7 @@ export function ungatedJobs(source) {
     }
 
     return Object.entries(jobs)
-        .filter(([, job]) => !isGated(job?.if))
+        .filter(([, job]) => job?.if !== GATE)
         .map(([id]) => id)
 }
 

@@ -225,34 +225,41 @@ jobs:
   # Check names carry no version number for the same reason: the ruleset's list stays stable.
   # Only the `statamic/cms` dependency closure is lowered; the dev tooling stays locked. The
   # update rewrites `composer.lock` in the runner only.
-  compatibility:
-    name: Compatibility (${{ matrix.name }})
+  # Two jobs rather than one matrix job: a job skipped by the RUN_REMOTE_CI gate is skipped before
+  # a matrix expands, so it would report the literal name `Compatibility (${{ matrix.name }})` and
+  # the two required checks below would never report. Each job's `name:` is a required check.
+  compatibility-lowest:
+    name: Compatibility (lowest statamic/cms)
     runs-on: ubuntu-latest
-    # Budget kill-switch: see the RUN_REMOTE_CI note in the header. This condition names `matrix`
-    # on purpose: a job skipped by an `if:` that does not is skipped before its matrix expands and
-    # reports the literal name `Compatibility (${{ matrix.name }})`, so the two required checks
-    # `Compatibility (lowest statamic/cms)` and `Compatibility (PHP 8.5)` would never report.
-    if: vars.RUN_REMOTE_CI != 'false' && matrix.name != ''
+    # Budget kill-switch: see the RUN_REMOTE_CI note in the header.
+    if: vars.RUN_REMOTE_CI != 'false'
     timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: lowest statamic/cms
-            php: '8.4'
-            lowest: true
-          - name: PHP 8.5
-            php: '8.5'
-            lowest: false
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
         with:
-          php-version: ${{ matrix.php }}
+          php-version: '8.4'
 
       - name: Lower statamic/cms and its dependencies to their lowest allowed versions
-        if: matrix.lowest
         run: composer update statamic/cms --prefer-lowest --with-all-dependencies --no-interaction --no-progress
+
+      - name: Show the resolved statamic/cms
+        run: composer show statamic/cms | grep -E '^(name|versions)'
+
+      - run: composer stan
+      - run: composer test
+
+  compatibility-php85:
+    name: Compatibility (PHP 8.5)
+    runs-on: ubuntu-latest
+    # Budget kill-switch: see the RUN_REMOTE_CI note in the header.
+    if: vars.RUN_REMOTE_CI != 'false'
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+        with:
+          php-version: '8.5'
 
       - name: Show the resolved statamic/cms
         run: composer show statamic/cms | grep -E '^(name|versions)'
