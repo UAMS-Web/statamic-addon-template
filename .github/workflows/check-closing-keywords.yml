@@ -21,6 +21,8 @@ jobs:
   check:
     name: Closing keywords
     runs-on: ubuntu-latest
+    # Budget kill-switch: see the RUN_REMOTE_CI note in the header.
+    if: vars.RUN_REMOTE_CI != 'false'
     timeout-minutes: 5
     permissions:
       contents: read
