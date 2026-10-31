@@ -47,7 +47,7 @@ Developing against a host application is covered in [the development guide](docs
    - `docs/DEVELOPMENT.md` and `docs/SUBMISSION.md`: the package name, and the host's name.
    - `tests/Feature/HostRegistersAddonTest.php`: the namespace and package name.
    - `docs/wiki/`: every page, and the repository name and version in `_Footer.md`, `_Sidebar.md` and `Home.md`.
-   - `.github/pull_request_template.md` and the header of `.github/workflows/ci.yml`: the repository name.
+   - `.github/pull_request_template.md` and the header of `.github/workflows/ci.yml`: the repository name. Keep the `RUN_REMOTE_CI` gate on every job: a generated add-on is public, where it does nothing while the variable is unset, and `scripts/remote-ci-gate.test.mjs` fails if a job lacks it.
 3. Replace this README with the add-on's own. It has to state `PHP 8.4 or later` and `Statamic 6.35 or later` (the floors in `composer.json`), show `composer require uams-web/statamic-addon-template` with the add-on's package name, and link `docs/DEVELOPMENT.md` and `docs/SUBMISSION.md`; `tests/Unit/ReadmeTest.php` checks all of it. Once the add-on has a license, the README names it and links `LICENSE`.
 4. Replace the seed entry in `docs/DECISIONS.md` with the add-on's own first decision, or keep it and add yours after it. The decision-log guard needs at least one entry.
 5. Run `composer install`, which installs the dependencies, applies `patches/` and sets `core.hooksPath` to `.githooks`. Then run `composer update --lock` if `composer.lock` needs to follow the new name.
