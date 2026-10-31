@@ -228,8 +228,11 @@ jobs:
   compatibility:
     name: Compatibility (${{ matrix.name }})
     runs-on: ubuntu-latest
-    # Budget kill-switch: see the RUN_REMOTE_CI note in the header.
-    if: vars.RUN_REMOTE_CI != 'false'
+    # Budget kill-switch: see the RUN_REMOTE_CI note in the header. This condition names `matrix`
+    # on purpose: a job skipped by an `if:` that does not is skipped before its matrix expands and
+    # reports the literal name `Compatibility (${{ matrix.name }})`, so the two required checks
+    # `Compatibility (lowest statamic/cms)` and `Compatibility (PHP 8.5)` would never report.
+    if: vars.RUN_REMOTE_CI != 'false' && matrix.name != ''
     timeout-minutes: 20
     strategy:
       fail-fast: false
