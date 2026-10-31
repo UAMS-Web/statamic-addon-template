@@ -6,10 +6,8 @@ import { parse } from 'yaml'
 // Every job in the workflows that run on a pull request carries the RUN_REMOTE_CI gate (#16), so a
 // private repository switches remote CI off with a variable instead of deleting the workflows.
 // A job added without it would bill Actions minutes on a private repository, so this fails then.
-// `check-attribution-footer.yml` is not listed: it is a copy of the shared template, which
-// check-workflow-copies.mjs holds identical outside its header, so its gate belongs upstream.
 const GATE = "vars.RUN_REMOTE_CI != 'false'"
-const GATED_WORKFLOWS = ['ci.yml', 'check-closing-keywords.yml', 'check-required-checks.yml']
+const GATED_WORKFLOWS = ['ci.yml', 'check-attribution-footer.yml', 'check-closing-keywords.yml', 'check-required-checks.yml']
 
 /**
  * The ids of the jobs in a workflow whose `if:` is not the gate.
