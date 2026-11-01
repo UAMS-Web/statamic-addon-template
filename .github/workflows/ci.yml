@@ -1,11 +1,22 @@
 name: CI
 
-# The jobs mirror the scripts `composer ci` runs locally, but run in parallel: this repository
-# is public, so runner minutes are not a budget, and every failure on a pull request shows at
-# once instead of one job at a time. `composer ci` keeps its cost order, so a local run still
-# stops at the first failure. When a job's command changes here, change the matching `composer`
-# script (and the other way round). The shared setup lives in
+# The jobs mirror the scripts `composer ci` runs locally, but run in parallel, so every failure
+# on a pull request shows at once instead of one job at a time. `composer ci` keeps its cost
+# order, so a local run still stops at the first failure. When a job's command changes here,
+# change the matching `composer` script (and the other way round). The shared setup lives in
 # `.github/actions/setup/action.yml`.
+#
+# RUN_REMOTE_CI: budget kill-switch.
+# GitHub Actions minutes bill at the organization level, one pool shared by every UAMS-Web
+# repository, and only private repositories consume them. Every job below, and every job in
+# the pull-request workflows beside this one, is gated on `if: vars.RUN_REMOTE_CI != 'false'`:
+# with the variable set to `false` the jobs report `skipped` and consume no runner minutes;
+# unset, or any other value, runs them as before. A skipped job reports `Success`, so a green
+# required check while the switch is off means nothing ran, not that the code passed;
+# `composer ci` is the gate then. This template repository is private, so the switch is off
+# here; the add-ons generated from it are public, where minutes are free and nobody sets the
+# variable, so the gate does nothing there. `scripts/remote-ci-gate.test.mjs` fails when a job
+# is added without it.
 #
 # REQUIRED CHECKS. The organization ruleset "main: required checks
 # (<this repository>)" requires every job's `name:` below, plus the `name:` of the two
@@ -35,6 +46,8 @@ jobs:
   composer-validate:
     name: Composer validate (composer.lock freshness)
     runs-on: ubuntu-latest
+    # Budget kill-switch: see the RUN_REMOTE_CI note in the header.
+    if: vars.RUN_REMOTE_CI != 'false'
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
@@ -52,6 +65,8 @@ jobs:
   no-emoji:
     name: Repository guards (emoji, decision log)
     runs-on: ubuntu-latest
+    # Budget kill-switch: see the RUN_REMOTE_CI note in the header.
+    if: vars.RUN_REMOTE_CI != 'false'
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
@@ -69,6 +84,8 @@ jobs:
   scripts:
     name: Guard-script tests (vitest)
     runs-on: ubuntu-latest
+    # Budget kill-switch: see the RUN_REMOTE_CI note in the header.
+    if: vars.RUN_REMOTE_CI != 'false'
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
@@ -91,6 +108,8 @@ jobs:
   built-assets:
     name: Built assets (resources/dist matches source)
     runs-on: ubuntu-latest
+    # Budget kill-switch: see the RUN_REMOTE_CI note in the header.
+    if: vars.RUN_REMOTE_CI != 'false'
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
@@ -120,6 +139,8 @@ jobs:
   mutate-ignore:
     name: Mutation annotations (none inert)
     runs-on: ubuntu-latest
+    # Budget kill-switch: see the RUN_REMOTE_CI note in the header.
+    if: vars.RUN_REMOTE_CI != 'false'
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
@@ -130,6 +151,8 @@ jobs:
   parallel-safe:
     name: Parallel-safe tests (no shared state)
     runs-on: ubuntu-latest
+    # Budget kill-switch: see the RUN_REMOTE_CI note in the header.
+    if: vars.RUN_REMOTE_CI != 'false'
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
@@ -143,6 +166,8 @@ jobs:
   pint:
     name: Pint
     runs-on: ubuntu-latest
+    # Budget kill-switch: see the RUN_REMOTE_CI note in the header.
+    if: vars.RUN_REMOTE_CI != 'false'
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
@@ -152,6 +177,8 @@ jobs:
   rector:
     name: Rector (gating profile)
     runs-on: ubuntu-latest
+    # Budget kill-switch: see the RUN_REMOTE_CI note in the header.
+    if: vars.RUN_REMOTE_CI != 'false'
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
@@ -161,6 +188,8 @@ jobs:
   phpstan:
     name: Larastan (PHPStan)
     runs-on: ubuntu-latest
+    # Budget kill-switch: see the RUN_REMOTE_CI note in the header.
+    if: vars.RUN_REMOTE_CI != 'false'
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
@@ -170,6 +199,8 @@ jobs:
   pest:
     name: Pest (Unit and Integration)
     runs-on: ubuntu-latest
+    # Budget kill-switch: see the RUN_REMOTE_CI note in the header.
+    if: vars.RUN_REMOTE_CI != 'false'
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
@@ -194,29 +225,41 @@ jobs:
   # Check names carry no version number for the same reason: the ruleset's list stays stable.
   # Only the `statamic/cms` dependency closure is lowered; the dev tooling stays locked. The
   # update rewrites `composer.lock` in the runner only.
-  compatibility:
-    name: Compatibility (${{ matrix.name }})
+  # Two jobs rather than one matrix job: a job skipped by the RUN_REMOTE_CI gate is skipped before
+  # a matrix expands, so it would report the literal name `Compatibility (${{ matrix.name }})` and
+  # the two required checks below would never report. Each job's `name:` is a required check.
+  compatibility-lowest:
+    name: Compatibility (lowest statamic/cms)
     runs-on: ubuntu-latest
+    # Budget kill-switch: see the RUN_REMOTE_CI note in the header.
+    if: vars.RUN_REMOTE_CI != 'false'
     timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: lowest statamic/cms
-            php: '8.4'
-            lowest: true
-          - name: PHP 8.5
-            php: '8.5'
-            lowest: false
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
         with:
-          php-version: ${{ matrix.php }}
+          php-version: '8.4'
 
       - name: Lower statamic/cms and its dependencies to their lowest allowed versions
-        if: matrix.lowest
         run: composer update statamic/cms --prefer-lowest --with-all-dependencies --no-interaction --no-progress
+
+      - name: Show the resolved statamic/cms
+        run: composer show statamic/cms | grep -E '^(name|versions)'
+
+      - run: composer stan
+      - run: composer test
+
+  compatibility-php85:
+    name: Compatibility (PHP 8.5)
+    runs-on: ubuntu-latest
+    # Budget kill-switch: see the RUN_REMOTE_CI note in the header.
+    if: vars.RUN_REMOTE_CI != 'false'
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+        with:
+          php-version: '8.5'
 
       - name: Show the resolved statamic/cms
         run: composer show statamic/cms | grep -E '^(name|versions)'
