@@ -86,7 +86,7 @@ if (! is_dir($mutatorDir)) {
  * This detects the installed plugin's BEHAVIOR rather than the platform, so an upstream fix
  * to that split retires the finding on its own instead of silently invalidating a
  * platform test. Both inputs are overridable so each branch can be exercised on either
- * platform  -  the alternative is a check whose Windows arm no macOS seat can run.
+ * platform  -  the alternative is a check whose Windows arm cannot be run on macOS.
  *
  * @return bool Whether a trailing annotation is reachable through the line map.
  */
