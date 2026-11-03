@@ -105,6 +105,17 @@ it('carries neither delivered job in ci.yml', function (): void {
         ->and($workflow)->not->toContain('check-mutation-instrument.php');
 });
 
+it('names the mutate job in the ruleset step and says how an add-on turns on the push run', function (): void {
+    // Read the job's name from the workflow, so a rename there fails here
+    $workflow = (string) file_get_contents(dirname(__DIR__, 2).'/.github/workflows/ci.yml');
+
+    // Expect the job under the name the README lists, with the template-only push branch and its replacement stated
+    expect($workflow)->toContain('name: Mutation score (changed files, with PCOV)')
+        ->and(readmeText())->toContain('`Mutation score (changed files, with PCOV)`')
+        ->and(readmeText())->toContain('`echo "mode=full" >> "$GITHUB_OUTPUT"`')
+        ->and($workflow)->toContain('echo "mode=full" >> "$GITHUB_OUTPUT"');
+});
+
 it('links the files it points readers to, and they exist', function (): void {
     // Check each file the README points readers to
     foreach (['docs/DEVELOPMENT.md', 'docs/SUBMISSION.md'] as $path) {

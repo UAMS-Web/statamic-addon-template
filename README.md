@@ -58,6 +58,8 @@ Developing against a host application is covered in [the development guide](docs
 
 Write the add-on under `src/`, with tests under `tests/Unit` and `tests/Integration`. Control Panel assets go in `resources/js` and `resources/css`; run `npm run build` and commit `resources/dist`, because a Composer install does not run npm. Delete the Vite files, the `built-assets` job and `tests/Unit/ViteBuildTest.php` together if the add-on has no Control Panel assets.
 
+The `mutate` job in `ci.yml` runs `composer mutate` on the classes a pull request changes and passes, saying why, when it changes none. The template's `src/` holds no code a mutator changes, so the job does nothing on a push to `main`; once the add-on has code, replace the non-pull-request branch of its "Select the files to mutate" step with `echo "mode=full" >> "$GITHUB_OUTPUT"`, so a push mutates everything `composer mutate` covers. The `@pest-mutate-ignore` line on `ServiceProvider`'s `$vite` property can go once a test covers those lines or the property is gone.
+
 ### 3. Onboard to the sync
 
 Add the repository to `shared/manifest.json` in `UAMS-Web/uams-claude-skills`, with the profiles `core`, `php`, `pest`, `laravel`, `laravel-package`, `statamic`, `statamic-package`, `tests` and `quality`, following that repository's `shared/README.md` ("Adding a repository"). The sync then opens a pull request that adds the rules and skills to `.claude/`, `.agents/` and `.cursor/`, and inserts its generated section into `AGENTS.md` after the introduction. The copies of `marketplace-review` here are byte-identical to the download until `UAMS-Web/uams-claude-skills#177` replaces them with synced copies, and `github-wiki` may become shared (`UAMS-Web/uams-claude-skills#172`), so expect the sync pull request to touch both.
@@ -67,7 +69,7 @@ There is nothing to restore by hand afterwards. The sync delivers `.github/workf
 ### 4. Settings that live outside the repository
 
 - **Create the wiki's first page, before the add-on's first release.** In the new repository, open the Wiki tab, choose *Create the first page* and save it. A repository generated from the template does not get a wiki, and the wiki's git repository does not exist until a first page does, so `publish-wiki.yml` fails on its push without it. The first publish replaces that page with `docs/wiki/`. Also restrict wiki editing to collaborators (*Settings*, *Features*), since a publish overwrites browser edits. The `github-wiki` skill has the detail. Delete `publish-wiki.yml` and `docs/wiki/` if the add-on will have no wiki.
-- The organization ruleset "main: required checks" must list every job `name:` in `ci.yml` and the two pull-request-body workflows. `check-required-checks.yml` reports drift.
+- The organization ruleset "main: required checks" must list every job `name:` in `ci.yml` and the two pull-request-body workflows, among them `Mutation score (changed files, with PCOV)`. `check-required-checks.yml` reports drift.
 - A `LICENSE` and `composer.json`'s `license` field, once `UAMS-Web/uams-statamic#261` is decided.
 
 ## Keeping the tooling separable
