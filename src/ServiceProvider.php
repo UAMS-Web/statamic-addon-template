@@ -23,6 +23,9 @@ class ServiceProvider extends AddonServiceProvider
      *
      * @var array{input: list<string>, publicDirectory: string}
      */
+    // A property default holds no executable line, so coverage reports each item as uncovered
+    // although tests/Unit/ViteBuildTest.php pins the whole array against vite.config.js.
+    // @pest-mutate-ignore: RemoveArrayItem
     protected $vite = [
         'input' => [
             'resources/js/cp.js',
