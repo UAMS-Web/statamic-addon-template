@@ -7,10 +7,14 @@ import { parse } from 'yaml'
 // private repository switches remote CI off with a variable instead of deleting the workflows.
 // A job added without it would bill Actions minutes on a private repository, so this fails then.
 const GATE = "vars.RUN_REMOTE_CI != 'false'"
+// The `CI` aggregate in ci.yml runs `always()` so it reports a failed needed job, and keeps the gate
+// beside it; this is the one other condition a job may carry.
+const AGGREGATE_GATE = `always() && ${GATE}`
+const ACCEPTED = [GATE, AGGREGATE_GATE]
 const GATED_WORKFLOWS = ['ci.yml', 'check-attribution-footer.yml', 'check-closing-keywords.yml', 'check-required-checks.yml']
 
 /**
- * The ids of the jobs in a workflow whose `if:` is not the gate.
+ * The ids of the jobs in a workflow whose `if:` is neither the gate nor the aggregate's form of it.
  *
  * @param {string} source The workflow's YAML.
  * @returns {string[]} The job ids without the gate; empty when every job has it.
@@ -22,7 +26,7 @@ export function ungatedJobs(source) {
     }
 
     return Object.entries(jobs)
-        .filter(([, job]) => job?.if !== GATE)
+        .filter(([, job]) => !ACCEPTED.includes(job?.if))
         .map(([id]) => id)
 }
 
@@ -45,6 +49,12 @@ describe('the RUN_REMOTE_CI gate', () => {
         const source = ['jobs:', '  other:', "    if: github.event_name == 'push'", '    runs-on: ubuntu-latest', ''].join('\n')
 
         expect(ungatedJobs(source)).toEqual(['other'])
+    })
+
+    it('accepts the aggregate form, and names always() without the gate', () => {
+        const source = ['jobs:', '  ci:', `    if: ${AGGREGATE_GATE}`, '    runs-on: ubuntu-latest', '  bare:', '    if: always()', '    runs-on: ubuntu-latest', ''].join('\n')
+
+        expect(ungatedJobs(source)).toEqual(['bare'])
     })
 
     it('refuses a workflow with no jobs, which would otherwise read as gated', () => {
