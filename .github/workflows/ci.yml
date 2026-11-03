@@ -41,6 +41,11 @@ on:
     branches: [main]
   # Lets the workflow be run on demand against a branch.
   workflow_dispatch:
+  # Daily, on the default branch: an advisory published after a pull request merged shows up in
+  # `audit` below. A schedule runs the whole workflow, so every other job runs daily too, which
+  # costs nothing on a public repository and catches an upstream change that breaks the build.
+  schedule:
+    - cron: '17 6 * * *'
 
 # A new push to a pull request cancels that pull request's stale run.
 concurrency:
@@ -68,6 +73,27 @@ jobs:
 
       # Fails when composer.json and composer.lock have drifted apart.
       - run: composer validate --no-check-publish --no-check-all
+
+  audit:
+    name: Composer audit (locked packages)
+    runs-on: ubuntu-latest
+    # Budget kill-switch: see the RUN_REMOTE_CI note in the header.
+    if: vars.RUN_REMOTE_CI != 'false'
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+          tools: composer:v2
+
+      # Reads `composer.lock`, so it needs no install. It fails on any advisory in a locked
+      # package, on a pull request and on the daily schedule. `--abandoned=ignore` leaves
+      # abandoned-package reports out: the command's default fails on them, and they are not
+      # a security advisory.
+      - run: composer audit --locked --abandoned=ignore
 
 
   no-emoji:
@@ -406,7 +432,7 @@ jobs:
   # otherwise fail on those skips and block every merge, where the switch means "nothing ran".
   ci:
     name: CI
-    needs: [composer-validate, no-emoji, aggregate-needs, scripts, built-assets, mutate-ignore, parallel-safe, pint, rector, phpstan, pest, mutate, compatibility-lowest, compatibility-php85]
+    needs: [composer-validate, audit, no-emoji, aggregate-needs, scripts, built-assets, mutate-ignore, parallel-safe, pint, rector, phpstan, pest, mutate, compatibility-lowest, compatibility-php85]
     if: always() && vars.RUN_REMOTE_CI != 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 5
