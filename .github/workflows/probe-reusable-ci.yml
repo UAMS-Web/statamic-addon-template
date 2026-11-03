@@ -1,0 +1,21 @@
+name: Probe reusable CI
+
+# Throwaway probe for UAMS-Web/uams-claude-skills#485. Not part of the template; the branch is
+# never merged. Calls the reusable chain twice: once with default inputs, once Linux only.
+
+on:
+  push:
+    branches: [485-probe-reusable-ci]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  default:
+    uses: UAMS-Web/uams-ci-workflows/.github/workflows/ci.yml@485-ci-workflow
+
+  linux-only:
+    uses: UAMS-Web/uams-ci-workflows/.github/workflows/ci.yml@485-ci-workflow
+    with:
+      linux-only: true
