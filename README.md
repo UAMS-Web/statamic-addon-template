@@ -62,12 +62,7 @@ Write the add-on under `src/`, with tests under `tests/Unit` and `tests/Integrat
 
 Add the repository to `shared/manifest.json` in `UAMS-Web/uams-claude-skills`, with the profiles `core`, `php`, `pest`, `laravel`, `laravel-package`, `statamic`, `statamic-package`, `tests` and `quality`, following that repository's `shared/README.md` ("Adding a repository"). The sync then opens a pull request that adds the rules and skills to `.claude/`, `.agents/` and `.cursor/`, and inserts its generated section into `AGENTS.md` after the introduction. The copies of `marketplace-review` here are byte-identical to the download until `UAMS-Web/uams-claude-skills#177` replaces them with synced copies, and `github-wiki` may become shared (`UAMS-Web/uams-claude-skills#172`), so expect the sync pull request to touch both.
 
-Once the synced files are in, restore what depends on them:
-
-- the `synced-files` job in `.github/workflows/ci.yml`, running `node .claude/skills/synced-files/scripts/check-synced-files.mjs`;
-- the `mutation-instrument` job, running `composer test:mutation-instrument`, plus that script in `composer.json` (`@php .claude/skills/pcov-setup/scripts/check-mutation-instrument.php`) and in the `ci` script.
-
-Add each restored job's name to the ruleset in the same change, in the order `ci.yml` describes.
+There is nothing to restore by hand afterwards. The sync delivers `.github/workflows/synced-checks.yml`, which carries the `Synced files (no hand-edited rules or skills)` and `Mutation instrument (a mutant child can launch)` jobs. Do not copy either job into `ci.yml`: two jobs under one name report the same check, and `check-required-checks.yml` refuses that. This template's `ci.yml` has neither job, and a `composer test:mutation-instrument` script is optional: define one only to scope the probe to the suites the add-on's own mutation run uses, and the delivered workflow then runs it in place of the delivered script.
 
 ### 4. Settings that live outside the repository
 
