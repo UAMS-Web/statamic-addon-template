@@ -69,7 +69,7 @@ There is nothing to restore by hand afterwards. The sync delivers `.github/workf
 ### 4. Settings that live outside the repository
 
 - **Create the wiki's first page, before the add-on's first release.** In the new repository, open the Wiki tab, choose *Create the first page* and save it. A repository generated from the template does not get a wiki, and the wiki's git repository does not exist until a first page does, so `publish-wiki.yml` fails on its push without it. The first publish replaces that page with `docs/wiki/`. Also restrict wiki editing to collaborators (*Settings*, *Features*), since a publish overwrites browser edits. The `github-wiki` skill has the detail. Delete `publish-wiki.yml` and `docs/wiki/` if the add-on will have no wiki.
-- The organization ruleset "main: required checks" must list every job `name:` in `ci.yml` and the two pull-request-body workflows, among them `Mutation score (changed files, with PCOV)`. `check-required-checks.yml` reports drift.
+- The organization ruleset "main: required checks" must list every job `name:` in `ci.yml` and the two pull-request-body workflows, among them `Mutation score (changed files, with PCOV)` and `Composer audit (locked packages)`. `check-required-checks.yml` reports drift.
 - A `LICENSE` and `composer.json`'s `license` field, once `UAMS-Web/uams-statamic#261` is decided.
 
 ## Keeping the tooling separable
