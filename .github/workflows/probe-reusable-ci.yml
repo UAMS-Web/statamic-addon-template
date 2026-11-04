@@ -7,6 +7,8 @@ name: Probe reusable CI
 on:
   push:
     branches: [485-probe-reusable-ci]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
