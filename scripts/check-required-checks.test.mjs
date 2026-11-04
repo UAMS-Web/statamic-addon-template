@@ -245,6 +245,14 @@ describe('this repository', () => {
         expect(names).toContain('Attribution footer')
         expect(names).toContain('Closing keywords')
     })
+
+    it('reports each job the sync delivers once, from synced-checks.yml and from no other file', () => {
+        const names = collectJobNames(join(ROOT, '.github', 'workflows'))
+
+        // collectJobNames refuses a name two files report, so a copy in ci.yml would throw before this runs
+        expect(names.get('Synced files (no hand-edited rules or skills)')).toBe('synced-checks.yml')
+        expect(names.get('Mutation instrument (a mutant child can launch)')).toBe('synced-checks.yml')
+    })
 })
 
 describe('main', () => {

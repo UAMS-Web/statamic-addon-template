@@ -83,6 +83,39 @@ it('points the development guide at the README paragraph on the namespace', func
         ->toContain('(../README.md#1-generate-and-rename)');
 });
 
+it('says the sync delivers the synced-files and mutation-instrument jobs and asks for no restore', function (): void {
+    // Expect the delivery to be named, with both job names
+    expect(readmeText())->toContain('The sync delivers `.github/workflows/synced-checks.yml`')
+        ->and(readmeText())->toContain('`Synced files (no hand-edited rules or skills)`')
+        ->and(readmeText())->toContain('`Mutation instrument (a mutant child can launch)`')
+        // Expect the old hand restore to be gone, and the warning against a second copy to stay
+        ->and(readmeText())->not->toContain('restore what depends on them')
+        ->and(readmeText())->not->toContain('Add each restored job')
+        ->and(readmeText())->toContain('Do not copy either job into `ci.yml`');
+});
+
+it('carries neither delivered job in ci.yml', function (): void {
+    // Read the template's own workflow
+    $workflow = (string) file_get_contents(dirname(__DIR__, 2).'/.github/workflows/ci.yml');
+
+    // Expect no job under the delivered names, and no step running the delivered scripts
+    expect($workflow)->not->toContain('Synced files (')
+        ->and($workflow)->not->toContain('Mutation instrument (')
+        ->and($workflow)->not->toContain('check-synced-files.mjs')
+        ->and($workflow)->not->toContain('check-mutation-instrument.php');
+});
+
+it('names the mutate job in the ruleset step and says how an add-on turns on the push run', function (): void {
+    // Read the job's name from the workflow, so a rename there fails here
+    $workflow = (string) file_get_contents(dirname(__DIR__, 2).'/.github/workflows/ci.yml');
+
+    // Expect the job under the name the README lists, with the template-only push branch and its replacement stated
+    expect($workflow)->toContain('name: Mutation score (changed files, with PCOV)')
+        ->and(readmeText())->toContain('`Mutation score (changed files, with PCOV)`')
+        ->and(readmeText())->toContain('`echo "mode=full" >> "$GITHUB_OUTPUT"`')
+        ->and($workflow)->toContain('echo "mode=full" >> "$GITHUB_OUTPUT"');
+});
+
 it('links the files it points readers to, and they exist', function (): void {
     // Check each file the README points readers to
     foreach (['docs/DEVELOPMENT.md', 'docs/SUBMISSION.md'] as $path) {
