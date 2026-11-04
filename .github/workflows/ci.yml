@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   checks:
-    uses: UAMS-Web/uams-ci-workflows/.github/workflows/ci.yml@f0b4d0364604ded1053830f6cce26ef5510314b4
+    uses: UAMS-Web/uams-ci-workflows/.github/workflows/ci.yml@v0.1.0
 
   ci:
     name: CI
