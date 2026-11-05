@@ -52,7 +52,7 @@ Developing against a host application is covered in [the development guide](docs
 4. Replace the seed entry in `docs/DECISIONS.md` with the add-on's own first decision, or keep it and add yours after it. The decision-log guard needs at least one entry.
 5. Run `composer install`, which installs the dependencies, applies `patches/` and sets `core.hooksPath` to `.githooks`. Then run `composer update --lock` if `composer.lock` needs to follow the new name.
 6. Run `npm ci` after `composer install` (`@statamic/cms` is a `file:` link into `vendor/`), then `composer ci` and `npm run test:scripts`.
-7. Create the wiki's first page in the browser, once, before the first release; see [Settings that live outside the repository](#4-settings-that-live-outside-the-repository).
+7. Apply the repository settings and its ruleset with the command in [Apply the repository settings](#4-apply-the-repository-settings), and do the steps it leaves for a person (the wiki's first page among them) from [What the command leaves for a person](#5-what-the-command-leaves-for-a-person).
 
 ### 2. Add the add-on
 
@@ -66,10 +66,27 @@ Add the repository to `shared/manifest.json` in `UAMS-Web/uams-claude-skills`, w
 
 There is nothing to restore by hand afterwards. The sync delivers `.github/workflows/synced-checks.yml`, which carries the `Synced files (no hand-edited rules or skills)` and `Mutation instrument (a mutant child can launch)` jobs. Do not copy either job into `ci.yml`: two jobs under one name report the same check, and `check-required-checks.yml` refuses that. This template's `ci.yml` has neither job, and a `composer test:mutation-instrument` script is optional: define one only to scope the probe to the suites the add-on's own mutation run uses, and the delivered workflow then runs it in place of the delivered script.
 
-### 4. Settings that live outside the repository
+### 4. Apply the repository settings
 
+From the new repository's root, with `gh` signed in as someone who administers it, run the command in plan mode first:
+
+```bash
+node .claude/skills/repository-settings/scripts/apply-addon-settings.mjs UAMS-Web/<repo>
+```
+
+It only reads: it prints each setting and ruleset change it would make and writes nothing. Run it again with `--apply` to make them:
+
+```bash
+node .claude/skills/repository-settings/scripts/apply-addon-settings.mjs UAMS-Web/<repo> --apply
+```
+
+`--apply` asks "Apply N changes? [y/N]" before the first write, and reads every change back afterwards. The command is delivered by the sync (the `repository-settings` skill), so run this step after [Onboard to the sync](#3-onboard-to-the-sync) has merged. What it sets, and why, is in that skill; this README does not list it.
+
+### 5. What the command leaves for a person
+
+- **Add the repository to the sync's manifest and dispatch the sync**, as in [Onboard to the sync](#3-onboard-to-the-sync).
 - **Create the wiki's first page, before the add-on's first release.** In the new repository, open the Wiki tab, choose *Create the first page* and save it. A repository generated from the template does not get a wiki, and the wiki's git repository does not exist until a first page does, so `publish-wiki.yml` fails on its push without it. The first publish replaces that page with `docs/wiki/`. Also restrict wiki editing to collaborators (*Settings*, *Features*), since a publish overwrites browser edits. The `github-wiki` skill has the detail. Delete `publish-wiki.yml` and `docs/wiki/` if the add-on will have no wiki.
-- The organization ruleset "main: required checks" must list every job `name:` in `ci.yml` and the two pull-request-body workflows, among them `Mutation score (changed files, with PCOV)` and `Composer audit (locked packages)`. `check-required-checks.yml` reports drift.
+- **Tags, releases and Packagist**, per [the submission checklist](docs/SUBMISSION.md).
 - A `LICENSE` and `composer.json`'s `license` field, once `UAMS-Web/uams-statamic#261` is decided.
 
 ## Keeping the tooling separable
