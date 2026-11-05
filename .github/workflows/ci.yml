@@ -72,6 +72,8 @@ jobs:
   # The shared chain. Its checks report as `checks / <job name> (<operating system>)`.
   checks:
     uses: UAMS-Web/uams-ci-workflows/.github/workflows/ci.yml@8cf414f7eb86e69d0b4d4717d4dcd8458067f822
+    with:
+      mutate: false
     # with:
     #   linux-only: true
     #   all-platform-jobs: 'pint'
