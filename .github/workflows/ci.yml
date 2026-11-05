@@ -67,7 +67,7 @@ permissions:
 jobs:
   # The shared chain. Its checks report as `checks / <job name> (<operating system>)`.
   checks:
-    uses: UAMS-Web/uams-ci-workflows/.github/workflows/ci.yml@v0.2.0
+    uses: UAMS-Web/uams-ci-workflows/.github/workflows/ci.yml@e52bb78d4d1447e3ffcb5f5a34cc238a2425acc0
     # Budget kill-switch: see the RUN_REMOTE_CI note in the header.
     if: vars.RUN_REMOTE_CI != 'false'
     with:
