@@ -23,11 +23,8 @@ describe('the composer audit job', () => {
         expect(commands).toEqual(['composer audit --locked --abandoned=ignore'])
     })
 
-    it('is named as the README lists it', () => {
-        const readme = readFileSync(join(import.meta.dirname, '..', 'README.md'), 'utf8')
-
+    it('keeps the name the required-checks list is built from', () => {
         expect(WORKFLOW.jobs.audit.name).toBe('Composer audit (locked packages)')
-        expect(readme).toContain('`Composer audit (locked packages)`')
     })
 
     it('is one of the jobs the CI aggregate waits for', () => {

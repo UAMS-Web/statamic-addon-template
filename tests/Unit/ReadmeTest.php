@@ -105,15 +105,45 @@ it('carries neither delivered job in ci.yml', function (): void {
         ->and($workflow)->not->toContain('check-mutation-instrument.php');
 });
 
-it('names the mutate job in the ruleset step and says how an add-on turns on the push run', function (): void {
-    // Read the job's name from the workflow, so a rename there fails here
+it("says how an add-on turns on the mutate job's push run", function (): void {
+    // Read the workflow, so a change to the step there fails here
     $workflow = (string) file_get_contents(dirname(__DIR__, 2).'/.github/workflows/ci.yml');
 
-    // Expect the job under the name the README lists, with the template-only push branch and its replacement stated
+    // Expect the job to exist, with the template-only push branch and its replacement stated in the README
     expect($workflow)->toContain('name: Mutation score (changed files, with PCOV)')
-        ->and(readmeText())->toContain('`Mutation score (changed files, with PCOV)`')
         ->and(readmeText())->toContain('`echo "mode=full" >> "$GITHUB_OUTPUT"`')
         ->and($workflow)->toContain('echo "mode=full" >> "$GITHUB_OUTPUT"');
+});
+
+it('points the steps at apply-addon-settings.mjs, in plan mode and with --apply, and lists what it leaves', function (): void {
+    // Expect the command, run in plan mode and then with --apply, which asks before it writes
+    expect(readmeText())->toContain('node .claude/skills/repository-settings/scripts/apply-addon-settings.mjs UAMS-Web/<repo>')
+        ->and(readmeText())->toContain('apply-addon-settings.mjs UAMS-Web/<repo> --apply')
+        ->and(readmeText())->toContain('asks "Apply N changes? [y/N]" before the first write')
+        // Expect the steps the command leaves for a person
+        ->and(readmeText())->toContain('### 5. What the command leaves for a person')
+        ->and(readmeText())->toContain("Create the wiki's first page")
+        ->and(readmeText())->toContain('**Tags, releases and Packagist**')
+        // Expect no hand-written ruleset step, now that the command applies it
+        ->and(readmeText())->not->toContain('The organization ruleset "main: required checks" must list');
+});
+
+it('points every README anchor at a heading that exists', function (): void {
+    // Collect the README's headings as GitHub anchors
+    preg_match_all('/^#{2,4} (.+)$/m', readmeText(), $headings);
+    $anchors = array_map(
+        fn (string $heading): string => trim((string) preg_replace('/[^a-z0-9 -]/', '', strtolower($heading))),
+        $headings[1],
+    );
+    $anchors = array_map(fn (string $anchor): string => str_replace(' ', '-', $anchor), $anchors);
+
+    // Check each in-page link
+    preg_match_all('/\]\(#([a-z0-9-]+)\)/', readmeText(), $links);
+
+    foreach ($links[1] as $link) {
+        // Expect a heading to carry that anchor
+        expect($anchors)->toContain($link);
+    }
 });
 
 it('links the files it points readers to, and they exist', function (): void {
