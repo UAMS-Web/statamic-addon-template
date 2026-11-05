@@ -73,6 +73,7 @@ jobs:
     with:
       linux-only: true
       mutate: false
+      pest: false
       mutate-paths: src
 
   # Not in the chain: the repository's decision log has an order a person can break by hand.
