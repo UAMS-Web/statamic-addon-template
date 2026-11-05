@@ -1,3 +1,9 @@
 <?php
+
+declare(strict_types=1);
+
 // @pest-mutate-ignore
-function probe_fixture() { return 1; }
+function probe_fixture(): int
+{
+    return 1;
+}
