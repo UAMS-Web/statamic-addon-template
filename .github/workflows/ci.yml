@@ -67,12 +67,13 @@ permissions:
 jobs:
   # The shared chain. Its checks report as `checks / <job name> (<operating system>)`.
   checks:
-    uses: UAMS-Web/uams-ci-workflows/.github/workflows/ci.yml@v0.2.0
+    uses: UAMS-Web/uams-ci-workflows/.github/workflows/ci.yml@455ee47a19e3a92a51e702de6263ac05ced25091
     # Budget kill-switch: see the RUN_REMOTE_CI note in the header.
     if: vars.RUN_REMOTE_CI != 'false'
     with:
       linux-only: true
-      mutate: false
+      all-platform-jobs: 'mutate'
+      windows-jobs: 'pint'
       mutate-paths: src
 
   # Not in the chain: the repository's decision log has an order a person can break by hand.
