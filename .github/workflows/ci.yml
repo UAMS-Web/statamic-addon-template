@@ -47,7 +47,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, probe-2148-a]
   # Lets the workflow be run on demand against a branch.
   workflow_dispatch:
   # Daily, on the default branch: an advisory published after a pull request merged shows up in
@@ -67,12 +67,12 @@ permissions:
 jobs:
   # The shared chain. Its checks report as `checks / <job name> (<operating system>)`.
   checks:
-    uses: UAMS-Web/uams-ci-workflows/.github/workflows/ci.yml@v0.2.0
+    uses: UAMS-Web/uams-ci-workflows/.github/workflows/ci.yml@78c1c7441fe6474cf773f00ae39534e36f85d878
     # Budget kill-switch: see the RUN_REMOTE_CI note in the header.
     if: vars.RUN_REMOTE_CI != 'false'
     with:
       linux-only: true
-      mutate: false
+      mutate-full-timeout-minutes: 90
       mutate-paths: src
 
   # Not in the chain: the repository's decision log has an order a person can break by hand.
