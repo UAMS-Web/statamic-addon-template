@@ -11,7 +11,7 @@ const GATE = "vars.RUN_REMOTE_CI != 'false'"
 // beside it; this is the one other condition a job may carry.
 const AGGREGATE_GATE = `always() && ${GATE}`
 const ACCEPTED = [GATE, AGGREGATE_GATE]
-const GATED_WORKFLOWS = ['ci.yml', 'check-attribution-footer.yml', 'check-closing-keywords.yml', 'check-required-checks.yml']
+const GATED_WORKFLOWS = ['ci.yml', 'check-attribution-footer.yml', 'check-closing-keywords.yml']
 
 /**
  * The ids of the jobs in a workflow whose `if:` is neither the gate nor the aggregate's form of it.
