@@ -74,6 +74,7 @@ jobs:
       linux-only: true
       mutate: false
       mutate-paths: src
+      windows-jobs: 'pint phpstan'
 
   # Not in the chain: the repository's decision log has an order a person can break by hand.
   decision-log:
