@@ -1,22 +1,31 @@
 name: CI
 
-# The jobs mirror the scripts `composer ci` runs locally, but run in parallel, so every failure
-# on a pull request shows at once instead of one job at a time. `composer ci` keeps its cost
-# order, so a local run still stops at the first failure. When a job's command changes here,
-# change the matching `composer` script (and the other way round). The shared setup lives in
-# `.github/actions/setup/action.yml`.
+# This workflow calls the shared job chain in UAMS-Web/uams-ci-workflows and adds the jobs that
+# chain does not provide, plus the one job a ruleset requires, `CI`. The chain (Composer validate,
+# synced files, no-emoji, aggregate-needs, Pint, Rector, PHPStan, mutate-ignore, mutate, Pest) lives
+# in that repository; its checks report as `checks / <job name> (<operating system>)`. The
+# `.claude/skills/code-quality/templates/ci.yml` template in UAMS-Web/uams-claude-skills is the
+# form this file adopts (UAMS-Web/uams-claude-skills#492). The jobs below the call are this
+# repository's own: they are not in the chain, so they stay here as plain jobs.
+#
+# THE PIN. `uses:` names a release tag of the reusable workflow, never a branch, so a change to
+# the chain reaches this repository only when the tag here moves. Dependabot does not move it.
+# `mutate: false` because the template's `src/` holds no code a mutator changes: the chain's full
+# mutation pass on a push to `main` would create no mutants and fail by design (measured:
+# `composer mutate -- --min=100` prints "0 Mutations for 0 Files created", exit 1). An add-on whose
+# `src/` has code deletes that input. With the input false the chain's `Chain result` job treats
+# the skipped `mutate` job as success and still fails on any other skipped job.
 #
 # RUN_REMOTE_CI: budget kill-switch.
 # GitHub Actions minutes bill at the organization level, one pool shared by every UAMS-Web
-# repository, and only private repositories consume them. Every job below, and every job in
-# the pull-request workflows beside this one, is gated on `if: vars.RUN_REMOTE_CI != 'false'`:
-# with the variable set to `false` the jobs report `skipped` and consume no runner minutes;
-# unset, or any other value, runs them as before. A skipped job reports `Success`, so a green
-# required check while the switch is off means nothing ran, not that the code passed;
-# `composer ci` is the gate then. This template repository is private, so the switch is off
-# here; the add-ons generated from it are public, where minutes are free and nobody sets the
-# variable, so the gate does nothing there. `scripts/remote-ci-gate.test.mjs` fails when a job
-# is added without it.
+# repository, and only private repositories consume them. Every job below, the call included, and
+# every job in the pull-request workflows beside this one, is gated on
+# `if: vars.RUN_REMOTE_CI != 'false'`: with the variable set to `false` the jobs report `skipped`
+# and consume no runner minutes; unset, or any other value, runs them as before. A skipped job
+# reports `Success`, so a green required check while the switch is off means nothing ran, not that
+# the code passed; `composer ci` is the gate then. The add-ons generated from this repository are
+# public, where minutes are free and nobody sets the variable, so the gate does nothing there.
+# `scripts/remote-ci-gate.test.mjs` fails when a job is added without it.
 #
 # REQUIRED CHECKS. `main` requires three status checks by name, through the organization's atomic
 # rulesets selected by this repository's `required_checks` property (`ci-aggregate` and
@@ -25,13 +34,15 @@ name: CI
 # ruleset change. Do not rename `CI`. Job names must stay unique across all workflows in this
 # repository, because two jobs under one name report one check.
 #
-# THE `CI` AGGREGATE. The last job, `ci` (named `CI`), `needs:` every other job in this file and
-# fails unless each one succeeded, so a ruleset can require the one name `CI` instead of every
-# job's (UAMS-Web/uams-claude-skills#471). Adding, renaming or removing a job here means changing
-# the `CI` job's `needs:` list in the same change: a job left out of it is required by nothing.
-# The `aggregate-needs` job runs `check-aggregate-needs.mjs`, which fails, naming the job, when
-# the list and the jobs drift apart. A job can only `needs:` jobs in its own workflow, so the
-# aggregate lives here and not in the synced `synced-checks.yml`.
+# THE `CI` AGGREGATE. The last job, `ci` (named `CI`), `needs:` the call and every plain job in
+# this file and fails unless each one succeeded, so a ruleset can require the one name `CI` instead
+# of every job's (UAMS-Web/uams-claude-skills#471). The call's own `Chain result` job needs every
+# job in the chain, so the call is `success` only when each of them succeeded. Adding, renaming or
+# removing a plain job here means changing the `CI` job's `needs:` list in the same change: a job
+# left out of it is required by nothing. The chain's `aggregate-needs` job runs
+# `check-aggregate-needs.mjs`, which fails, naming the job, when the list and the jobs drift apart.
+# A job can only `needs:` jobs in its own workflow, so the aggregate lives here and not in the
+# synced `synced-checks.yml`.
 
 on:
   pull_request:
@@ -54,8 +65,19 @@ permissions:
   contents: read
 
 jobs:
-  composer-validate:
-    name: Composer validate (composer.lock freshness)
+  # The shared chain. Its checks report as `checks / <job name> (<operating system>)`.
+  checks:
+    uses: UAMS-Web/uams-ci-workflows/.github/workflows/ci.yml@v0.2.0
+    # Budget kill-switch: see the RUN_REMOTE_CI note in the header.
+    if: vars.RUN_REMOTE_CI != 'false'
+    with:
+      linux-only: true
+      mutate: false
+      mutate-paths: src
+
+  # Not in the chain: the repository's decision log has an order a person can break by hand.
+  decision-log:
+    name: Decision log order
     runs-on: ubuntu-latest
     # Budget kill-switch: see the RUN_REMOTE_CI note in the header.
     if: vars.RUN_REMOTE_CI != 'false'
@@ -63,14 +85,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: shivammathur/setup-php@v2
+      - uses: actions/setup-node@v7
         with:
-          php-version: '8.4'
-          coverage: none
-          tools: composer:v2
+          node-version: '22'
 
-      # Fails when composer.json and composer.lock have drifted apart.
-      - run: composer validate --no-check-publish --no-check-all
+      # Fails, naming the two entries, when docs/DECISIONS.md is out of order.
+      - run: node scripts/check-decision-log-order.mjs
+
 
   audit:
     name: Composer audit (locked packages)
@@ -92,43 +113,6 @@ jobs:
       # abandoned-package reports out: the command's default fails on them, and they are not
       # a security advisory.
       - run: composer audit --locked --abandoned=ignore
-
-
-  no-emoji:
-    name: Repository guards (emoji, decision log)
-    runs-on: ubuntu-latest
-    # Budget kill-switch: see the RUN_REMOTE_CI note in the header.
-    if: vars.RUN_REMOTE_CI != 'false'
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: '22'
-
-      # Fails, naming the file and code points, when an emoji reaches a tracked record.
-      - run: node scripts/check-no-emoji.mjs
-
-      # Fails, naming the two entries, when docs/DECISIONS.md is out of order.
-      - run: node scripts/check-decision-log-order.mjs
-
-  aggregate-needs:
-    name: Aggregate needs
-    runs-on: ubuntu-latest
-    # Budget kill-switch: see the RUN_REMOTE_CI note in the header.
-    if: vars.RUN_REMOTE_CI != 'false'
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: '22'
-
-      # Fails, naming the job, when a job is missing from the `needs:` list of `CI` or a
-      # fixed required name is reported by no job. Allow-list: .github/aggregate-needs-allow.json.
-      - run: node .claude/skills/code-quality/scripts/check-aggregate-needs.mjs
 
   scripts:
     name: Guard-script tests (vitest)
@@ -185,18 +169,6 @@ jobs:
             exit 1
           fi
 
-  mutate-ignore:
-    name: Mutation annotations (none inert)
-    runs-on: ubuntu-latest
-    # Budget kill-switch: see the RUN_REMOTE_CI note in the header.
-    if: vars.RUN_REMOTE_CI != 'false'
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v7
-      - uses: ./.github/actions/setup
-      - run: composer test:mutate-ignore
-
-
   parallel-safe:
     name: Parallel-safe tests (no shared state)
     runs-on: ubuntu-latest
@@ -211,165 +183,6 @@ jobs:
           coverage: none
       # Dependency-free, so it needs PHP and nothing else.
       - run: composer test:parallel-safe
-
-  pint:
-    name: Pint
-    runs-on: ubuntu-latest
-    # Budget kill-switch: see the RUN_REMOTE_CI note in the header.
-    if: vars.RUN_REMOTE_CI != 'false'
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v7
-      - uses: ./.github/actions/setup
-      - run: composer test:pint
-
-  rector:
-    name: Rector (gating profile)
-    runs-on: ubuntu-latest
-    # Budget kill-switch: see the RUN_REMOTE_CI note in the header.
-    if: vars.RUN_REMOTE_CI != 'false'
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v7
-      - uses: ./.github/actions/setup
-      - run: composer test:refactor
-
-  phpstan:
-    name: Larastan (PHPStan)
-    runs-on: ubuntu-latest
-    # Budget kill-switch: see the RUN_REMOTE_CI note in the header.
-    if: vars.RUN_REMOTE_CI != 'false'
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v7
-      - uses: ./.github/actions/setup
-      - run: composer stan
-
-  pest:
-    name: Pest (Unit and Integration)
-    runs-on: ubuntu-latest
-    # Budget kill-switch: see the RUN_REMOTE_CI note in the header.
-    if: vars.RUN_REMOTE_CI != 'false'
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v7
-      - uses: ./.github/actions/setup
-      # --log-junit feeds the band checks below; it changes nothing about what runs.
-      - name: Run the suite
-        run: composer test -- --display-all-issues --log-junit junit-parallel.xml
-
-      # Fails when more tests skipped than tests/skip-baseline.json records (a silent skip
-      # must not read as a pass), or when one class's cost nears the band's.
-      - name: Check the band reports
-        run: composer test:bands
-
-  # The mutation score on a pull request's changed classes. It installs PCOV through the setup
-  # action's `coverage` input, because `--mutate` without a coverage driver either errors or
-  # reports `0 Mutations for 0 Files created`, and it fails on a run that created no mutants as
-  # well as on any untested, uncovered or timed-out mutant. On a pull request it mutates only the
-  # PHP files the pull request adds, changes or renames under MUTATE_PATHS (the paths
-  # `composer mutate` passes to `--path`), and passes with the reason printed when there are
-  # none. A push mutates nothing here, because the template's `src/` has no code yet (the
-  # "Select the files to mutate" step says what an add-on changes once it has).
-  mutate:
-    name: Mutation score (changed files, with PCOV)
-    runs-on: ubuntu-latest
-    # Budget kill-switch: see the RUN_REMOTE_CI note in the header.
-    if: vars.RUN_REMOTE_CI != 'false'
-    timeout-minutes: 45
-    # An explicit `bash` runs each step with `-eo pipefail`; the default, `bash -e`, does not,
-    # and the run step's `| tee` would then report tee's status in place of Pest's.
-    defaults:
-      run:
-        shell: bash
-    steps:
-      # Depth 2: on a pull request the checkout is GitHub's merge commit, and its first parent
-      # is the base branch it was merged onto.
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 2
-      - uses: ./.github/actions/setup
-        with:
-          coverage: pcov
-
-      # The files are read from the merge commit against its first parent, so a later change on
-      # the base branch is not counted. Set MUTATE_PATHS to the paths `composer mutate` passes to
-      # `--path`, space-separated.
-      - name: Select the files to mutate
-        id: select
-        env:
-          EVENT: ${{ github.event_name }}
-          MUTATE_PATHS: src
-        run: |
-          if [ "$EVENT" != "pull_request" ]; then
-            # TEMPLATE ONLY. The stub in `src/` holds no code a mutator changes, so a full run
-            # creates no mutants and fails by design. An add-on whose `src/` has code replaces
-            # this block with `echo "mode=full" >> "$GITHUB_OUTPUT"` so a push mutates
-            # everything `composer mutate` covers (the README's step 2 repeats this).
-            echo "mode=none" >> "$GITHUB_OUTPUT"
-            echo "Not a pull request: the template's src/ has no code to mutate, so a push runs nothing."
-            exit 0
-          fi
-          if ! git rev-parse --verify --quiet HEAD^2 > /dev/null; then
-            echo "::error::HEAD is not a merge commit, so the pull request's changes cannot be read."
-            exit 1
-          fi
-          # NUL-separated, so a name git would quote (non-ASCII, a tab) is read as it is
-          list=$(mktemp)
-          git diff -z --name-only --diff-filter=AMR HEAD^1 HEAD -- $MUTATE_PATHS > "$list"
-          files=()
-          while IFS= read -r -d '' f; do
-            [[ "$f" == *.php ]] || continue
-            if [[ "$f" == *,* || "$f" == *$'\n'* ]]; then
-              echo "::error::A changed path holds a comma or a newline, which --path cannot carry: $f"
-              exit 1
-            fi
-            files+=("$f")
-          done < "$list"
-          if [ "${#files[@]}" -eq 0 ]; then
-            echo "mode=none" >> "$GITHUB_OUTPUT"
-            echo "No PHP file under $MUTATE_PATHS is added or changed by this pull request, so there is nothing to mutate."
-            exit 0
-          fi
-          echo "Mutating ${#files[@]} changed file(s):"
-          printf '%s\n' "${files[@]}"
-          echo "mode=changed" >> "$GITHUB_OUTPUT"
-          echo "paths=$(IFS=,; echo "${files[*]}")" >> "$GITHUB_OUTPUT"
-
-      # `--min=100` makes Pest fail the step on any survivor. The run is kept in a log because a
-      # run that mutated nothing is a setup failure that Pest's exit status reports or not
-      # depending on its version and `ignore_min_score_on_zero_mutations`. A later `--path`
-      # replaces the one `composer mutate` passes. On changed files, zero mutants is left to the
-      # check step, so Pest is told not to fail it.
-      - name: Run mutation testing
-        if: steps.select.outputs.mode != 'none'
-        env:
-          MODE: ${{ steps.select.outputs.mode }}
-          PATHS: ${{ steps.select.outputs.paths }}
-        run: |
-          if [ "$MODE" = "changed" ]; then
-            composer mutate -- --min=100 --ignore-min-score-on-zero-mutations --path="$PATHS" 2>&1 | tee mutate.log
-          else
-            composer mutate -- --min=100 2>&1 | tee mutate.log
-          fi
-
-      # Reads the log, not the exit status: fails on zero mutants, and on any untested, uncovered,
-      # pending or timed-out mutant. Runs even when the step above failed, so the log's own
-      # account of the failure is printed; skipped only when nothing was selected. One exception:
-      # changed files that exist, mutated with PCOV loaded, that produce zero mutants hold no code
-      # a mutator changes (an interface, say), which is a pass. Zero mutants on a full run, or
-      # with no PCOV, still fails.
-      - name: Check the mutation run
-        if: always() && steps.select.outputs.mode != 'none'
-        env:
-          MODE: ${{ steps.select.outputs.mode }}
-        run: |
-          if [ "$MODE" = "changed" ] && sed "s/$(printf '\033')\[[0-9;]*m//g" mutate.log | grep -Eq '(^|[^0-9])0 Mutations for 0 Files created' \
-            && php -r 'exit(extension_loaded("pcov") && ini_get("pcov.enabled") ? 0 : 1);'; then
-            echo "The changed files produced no mutants: they hold no code a mutator changes, so there is nothing to test."
-            exit 0
-          fi
-          php .claude/skills/pest-testing/scripts/check-mutation-run.php mutate.log
 
   # The add-on promises `statamic/cms` at its `composer.json` constraint and PHP ^8.4, and every
   # job above runs one combination. These legs run the dependency-sensitive checks (Larastan and
@@ -430,7 +243,7 @@ jobs:
   # otherwise fail on those skips and block every merge, where the switch means "nothing ran".
   ci:
     name: CI
-    needs: [composer-validate, audit, no-emoji, aggregate-needs, scripts, built-assets, mutate-ignore, parallel-safe, pint, rector, phpstan, pest, mutate, compatibility-lowest, compatibility-php85]
+    needs: [checks, decision-log, audit, scripts, built-assets, parallel-safe, compatibility-lowest, compatibility-php85]
     if: always() && vars.RUN_REMOTE_CI != 'false'
     runs-on: ubuntu-latest
     timeout-minutes: 5

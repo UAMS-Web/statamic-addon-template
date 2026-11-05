@@ -58,7 +58,7 @@ Developing against a host application is covered in [the development guide](docs
 
 Write the add-on under `src/`, with tests under `tests/Unit` and `tests/Integration`. Control Panel assets go in `resources/js` and `resources/css`; run `npm run build` and commit `resources/dist`, because a Composer install does not run npm. Delete the Vite files, the `built-assets` job and `tests/Unit/ViteBuildTest.php` together if the add-on has no Control Panel assets.
 
-The `mutate` job in `ci.yml` runs `composer mutate` on the classes a pull request changes and passes, saying why, when it changes none. The template's `src/` holds no code a mutator changes, so the job does nothing on a push to `main`; once the add-on has code, replace the non-pull-request branch of its "Select the files to mutate" step with `echo "mode=full" >> "$GITHUB_OUTPUT"`, so a push mutates everything `composer mutate` covers. The `@pest-mutate-ignore` line on `ServiceProvider`'s `$vite` property can go once a test covers those lines or the property is gone.
+The `checks` call in `ci.yml` passes `mutate: false`. The template's `src/` holds no code a mutator changes, so the chain's mutation pass would create no mutants and fail on a push to `main`. Once the add-on has code, delete that input: the chain's `mutate` job then runs `composer mutate` on the classes a pull request changes (and passes, saying why, when it changes none) and on everything `composer mutate` covers for a push. The `@pest-mutate-ignore` line on `ServiceProvider`'s `$vite` property can go once a test covers those lines or the property is gone.
 
 ### 3. Onboard to the sync
 

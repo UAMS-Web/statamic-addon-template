@@ -105,14 +105,14 @@ it('carries neither delivered job in ci.yml', function (): void {
         ->and($workflow)->not->toContain('check-mutation-instrument.php');
 });
 
-it("says how an add-on turns on the mutate job's push run", function (): void {
-    // Read the workflow, so a change to the step there fails here
+it('says the call passes mutate: false and how an add-on turns the mutate job on', function (): void {
+    // Read the workflow, so a change to the call there fails here
     $workflow = (string) file_get_contents(dirname(__DIR__, 2).'/.github/workflows/ci.yml');
 
-    // Expect the job to exist, with the template-only push branch and its replacement stated in the README
-    expect($workflow)->toContain('name: Mutation score (changed files, with PCOV)')
-        ->and(readmeText())->toContain('`echo "mode=full" >> "$GITHUB_OUTPUT"`')
-        ->and($workflow)->toContain('echo "mode=full" >> "$GITHUB_OUTPUT"');
+    // Expect the call to turn the job off, and the README to name the input and what deleting it does
+    expect($workflow)->toContain('mutate: false')
+        ->and(readmeText())->toContain('passes `mutate: false`')
+        ->and(readmeText())->toContain('delete that input');
 });
 
 it('points the steps at apply-addon-settings.mjs, in plan mode and with --apply, and lists what it leaves', function (): void {
