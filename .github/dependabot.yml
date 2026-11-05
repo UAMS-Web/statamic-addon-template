@@ -14,6 +14,11 @@ updates:
     target-branch: main
     schedule:
       interval: weekly
+    # `@statamic/cms` is a `file:` link into `vendor/statamic/cms`, which Composer installs and the
+    # repository does not commit, so Dependabot cannot retrieve it ("path based dependencies could
+    # not be retrieved") and the whole npm job failed. Composer owns that package's version.
+    ignore:
+      - dependency-name: "@statamic/cms"
     groups:
       npm-minor-and-patch:
         update-types:
