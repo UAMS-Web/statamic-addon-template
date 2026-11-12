@@ -1,4 +1,4 @@
-Written against v0.0.0.
+Written against v1.0.0.
 
 <What this area is for.>
 

@@ -1,4 +1,4 @@
-Written against v0.0.0.
+Written against v1.0.0.
 
 By the end of this page you will have <what the reader will have>. Replace this sentence with it, then the steps below.
 
